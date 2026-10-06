@@ -25,7 +25,7 @@ module Terminus
               description: description.to_s,
               duration: duration.to_h,
               end_at: rfc_3339(dtend),
-              exceptions: exdate.map(&:rfc3339),
+              exceptions: exdate.map { rfc_3339 it },
               geocoordinates: coordinates(geo),
               images: image.map(&:to_s),
               location: location.to_s,
@@ -34,7 +34,7 @@ module Terminus
               priority: priority.to_i,
               recurrence_id: rfc_3339(recurrence_id),
               recurrence_rule: rrule.map(&:to_h),
-              recurrences: rdate.map(&:rfc3339),
+              recurrences: rdate.map { rfc_3339 it },
               related_to:,
               request_status: request_status.map(&:to_s),
               resources: resources.map(&:to_s),
@@ -54,7 +54,9 @@ module Terminus
 
           def coordinates(value) = value ? value.map(&:to_f) : Core::EMPTY_ARRAY
 
-          def rfc_3339(at) = (at.rfc3339 if at)
+          # Values with a time zone identifier (TZID) wrap a `Time`, which has no `#rfc3339`, so convert
+          # to a `DateTime` first. This is a no-op for `DateTime` and keeps the same format for `Date`.
+          def rfc_3339(at) = (at.to_datetime.rfc3339 if at)
         end
       end
     end

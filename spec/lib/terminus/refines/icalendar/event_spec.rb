@@ -158,5 +158,46 @@ RSpec.describe Terminus::Refines::Icalendar::Event do
         )
       end
     end
+
+    # Values with a TZID parameter (i.e. `DTSTART;TZID=Europe/Madrid:...`) wrap a `Time`, not a `DateTime`.
+    context "with time zone identifier (TZID) values" do
+      let(:time) { Icalendar::Values::DateTime.new Time.new(2026, 10, 1, 9, 0, 0, "+02:00") }
+
+      before do
+        allow(event).to receive_messages(
+          dtstart: time,
+          dtend: time,
+          recurrence_id: time,
+          exdate: [time],
+          rdate: [time]
+        )
+      end
+
+      it "answers RFC 3339 strings" do
+        expect(event.to_h).to include(
+          start_at: "2026-10-01T09:00:00+02:00",
+          end_at: "2026-10-01T09:00:00+02:00",
+          recurrence_id: "2026-10-01T09:00:00+02:00",
+          exceptions: ["2026-10-01T09:00:00+02:00"],
+          recurrences: ["2026-10-01T09:00:00+02:00"]
+        )
+      end
+    end
+
+    context "with all day (date only) values" do
+      before do
+        allow(event).to receive_messages(
+          dtstart: Icalendar::Values::Date.new("20261015"),
+          dtend: Icalendar::Values::Date.new("20261016")
+        )
+      end
+
+      it "answers RFC 3339 strings at midnight" do
+        expect(event.to_h).to include(
+          start_at: "2026-10-15T00:00:00+00:00",
+          end_at: "2026-10-16T00:00:00+00:00"
+        )
+      end
+    end
   end
 end
